@@ -8,24 +8,13 @@ import (
 	"net/http"
 )
 
-// type method string
-
-// const sendMessage method = method("sendMessage")
-
-// type telegramBot struct {
-// 	token string
-// }
-//
-// func (bot *telegramBot) getURL() string {
-// 	url := "https://api.telegram.org/bot%s"
-// 	return fmt.Sprintf(url, bot.token)
-// }
-
 type method string
 
-const botURL string = "https://api.telegram.org/bot"
-const sendMessageMthd method = "sendMessage"
-const getUpdates method = "getUpdates"
+const (
+	apiURL string = "https://api.telegram.org/bot"
+ 	sendMessageMthd method = "sendMessage"
+ 	getUpdates method = "getUpdates"
+)
 
 type bot struct {
 	token        string
@@ -34,7 +23,7 @@ type bot struct {
 }
 
 func (bot *bot) makeURL(m method) string {
-	return fmt.Sprintf("%s%s/%s", botURL, bot.token, m)
+	return fmt.Sprintf("%s%s/%s", apiURL, bot.token, m)
 }
 
 // Bot ...
