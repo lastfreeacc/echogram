@@ -1,10 +1,10 @@
 package main
 
 import (
-	"github.com/lastfreeacc/teleautomonbot/teleapi"
+	"github.com/lastfreeacc/echogram/teleapi"
 )
 
 func main() {
 	bot := teleapi.NewBot("token")
-	bot.SendMessage("@chat", "some test")
+	bot.SendMessage(123456, "chat text")
 }
