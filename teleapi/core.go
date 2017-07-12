@@ -2,6 +2,7 @@ package teleapi
 
 import (
 	"bytes"
+	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -29,6 +30,7 @@ func (bot *bot) makeURL(m method) string {
 // Bot ...
 type Bot interface {
 	SendMessage(int64, string) error
+	Listen() <-chan *Update
 }
 
 // NewBot ...
@@ -64,4 +66,51 @@ func (bot *bot) SendMessage(chatID int64, text string) error {
 		log.Printf("[Warning] can not read api answer: {method: %s, data:%s}, err: %s", sendMessageMthd, json, err)
 	}
 	return nil
+}
+
+func (bot *bot) Listen() <-chan *Update {
+	go doUpdates(bot)
+	return bot.updateCh
+}
+
+func doUpdates(bot *bot) {
+	endPnt := bot.makeURL(getUpdates)
+	for {
+		jsonStr := fmt.Sprintf(`{"offset":%d, "timeout": 60}`, bot.currenOffset+1)
+		jsonBlob := []byte(jsonStr)
+		req, err := http.NewRequest("POST", endPnt, bytes.NewBuffer(jsonBlob))
+		if err != nil {
+			log.Printf("[Warning] can not getUpdates: %s", err.Error())
+			continue
+		}
+		req.Header.Set("Content-Type", "application/json")
+		client := &http.Client{}
+		resp, err := client.Do(req)
+		if err != nil {
+			log.Printf("[Warning] in send req: %s", err.Error())
+			continue
+		}
+		defer resp.Body.Close()
+		respBlob, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			log.Printf("[Warning] can not read api answer: {method: %s, data:%s}, err: %s\n", getUpdates, jsonBlob, err)
+		}
+		var result getUpdatesResp
+		err = json.Unmarshal(respBlob, &result)
+		if err != nil {
+			log.Printf("[Warning] can not unmarshal resp: %s\n", err.Error())
+			continue
+		}
+		if !result.Ok {
+			log.Printf("[Warning] result not ok\n")
+			continue
+		}
+		for _, update := range result.Result {
+			bot.updateCh <- update
+			if update.UpdateID > bot.currenOffset {
+				bot.currenOffset = update.UpdateID
+			}
+		}
+
+	}
 }

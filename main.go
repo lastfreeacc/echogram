@@ -12,15 +12,27 @@ const (
 	confFilename = "echogram.conf.json"
 )
 
+var (
+	conf = make(map[string]interface{})
+	botToken string
+	bot teleapi.Bot
+)
+
 func main() {
-	conf := make(map[string]interface{})
+	myInit()
+	upCh := bot.Listen()
+	for update := range upCh {
+		bot.SendMessage(update.Message.Chat.ID, update.Message.Text)
+	}
+}
+
+func myInit() {
 	readMapFromJSON(confFilename, &conf)
 	botToken, ok := conf["botToken"]
 	if !ok || botToken == "" {
 		log.Fatalf("[Error] can not find botToken in config file: %s\n", confFilename)
 	}
-	bot := teleapi.NewBot(botToken.(string))
-	bot.SendMessage(123456, "chat text")
+	bot = teleapi.NewBot(botToken.(string))
 }
 
 func readMapFromJSON(filename string, mapVar *map[string]interface{}) {
